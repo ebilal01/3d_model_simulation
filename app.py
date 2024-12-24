@@ -23,11 +23,6 @@ def generate_live_data():
                 "x": random.uniform(-5, 5),
                 "y": random.uniform(-5, 5),
                 "z": random.uniform(-5, 5)
-            },
-            "force": {
-                "x": random.uniform(-10, 10),
-                "y": random.uniform(-10, 10),
-                "z": random.uniform(-10, 10)
             }
         }
         socketio.emit("update_telemetry", json.dumps(telemetry_data))
@@ -40,6 +35,7 @@ def handle_connect():
 if __name__ == "__main__":
     socketio.start_background_task(generate_live_data)
     socketio.run(app, host="0.0.0.0", port=5000)
+
 
 
 
