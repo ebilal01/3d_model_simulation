@@ -48,6 +48,9 @@
                     scene
                 );
 
+                // Debugging: Confirm the satellite is loaded
+                console.log("Satellite model loaded:", satellite);
+
                 // Connect to the server via Socket.IO
                 const socket = io();
 
@@ -55,14 +58,23 @@
                 socket.on("force_data", (data) => {
                     console.log("Force data received:", data);
 
+                    // Ensure data has valid force values
+                    if (data.forceX === undefined || data.forceY === undefined || data.forceZ === undefined) {
+                        console.log("Invalid force data received. Skipping force application.");
+                        return;
+                    }
+
                     // Apply force to the satellite (example)
                     const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
+                    console.log("Applying force:", forceVector);
                     satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
 
                     // Rotate the satellite (you can animate it based on the force data)
+                    console.log(`Before rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
                     satellite.rotation.x += data.forceX * 0.01;
                     satellite.rotation.y += data.forceY * 0.01;
                     satellite.rotation.z += data.forceZ * 0.01;
+                    console.log(`After rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
 
                     // Optionally: Create arrows to visualize force direction
                     const forceArrow = BABYLON.MeshBuilder.CreateLines("forceArrow", {
@@ -71,6 +83,7 @@
                     }, scene);
 
                     forceArrow.position = satellite.position;
+                    console.log("Force arrow created:", forceArrow);
                 });
             });
 
@@ -85,6 +98,7 @@
     </script>
 </body>
 </html>
+
 
 
 
