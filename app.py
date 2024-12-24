@@ -1,9 +1,14 @@
 from flask import Flask, render_template, jsonify
 import random
 import time
-import json  # Add this import statement
+import json
 
 app = Flask(__name__)
+
+# Simulated function to save flight data (you may adjust this to save to a file)
+def save_flight_data(data):
+    with open("flight_data.json", "w") as f:
+        json.dump(data, f)
 
 @app.route('/')
 def index():
@@ -11,39 +16,27 @@ def index():
 
 @app.route('/live-data', methods=['GET'])
 def live_data():
-    try:
-        # Simulate force vectors for movement and rotation
-        data = {
-            "force": {
+    # Simulate rotation and force data for testing
+    data = {
+        "rotation": {
+            "x": random.uniform(0, 2 * 3.14159),  # Random rotation on x-axis
+            "y": random.uniform(0, 2 * 3.14159),  # Random rotation on y-axis
+            "z": random.uniform(0, 2 * 3.14159)   # Random rotation on z-axis
+        },
+        "forces": [
+            {
                 "x": random.uniform(-10, 10),
                 "y": random.uniform(-10, 10),
-                "z": random.uniform(-10, 10)
-            },
-            "rotation": {
-                "x": random.uniform(-1, 1),
-                "y": random.uniform(-1, 1),
-                "z": random.uniform(-1, 1)
-            }
-        }
+                "z": random.uniform(-10, 10),
+                "magnitude": random.uniform(1, 20)
+            } for _ in range(3)
+        ]
+    }
 
-        # Save flight data to file (this will now work)
-        save_flight_data(data)
+    # Save flight data to file (optional)
+    save_flight_data(data)
 
-        # Return the simulated live data
-        return jsonify(data)
-
-    except Exception as e:
-        # If any error occurs, print the error and return a 500 status
-        print(f"Error generating live data: {e}")
-        return jsonify({"error": "Internal Server Error"}), 500
-
-def save_flight_data(data):
-    try:
-        # Save data to a file (you can customize this if needed)
-        with open('force_data.json', 'w') as f:
-            json.dump(data, f)  # This will work now
-    except Exception as e:
-        print(f"Error saving flight data: {e}")
+    return jsonify(data)  # Return the simulated live data
 
 if __name__ == '__main__':
     app.run(debug=True)
