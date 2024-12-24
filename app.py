@@ -1,40 +1,43 @@
-import os
-import time
+from flask import Flask, render_template, jsonify
 import random
-from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO
-import serial
+import time
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
-
-# Use eventlet with Flask-SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index4.html')  # Serve the frontend HTML
 
 @app.route('/live-data', methods=['GET'])
 def live_data():
-    # Simulate real-time 3D data
+    # Simulate force vectors for movement and rotation
     data = {
-        "x_rotation": random.uniform(-90.0, 90.0),
-        "y_rotation": random.uniform(-180.0, 180.0),
-        "z_rotation": random.uniform(-10.0, 10.0),
+        "force": {
+            "x": random.uniform(-10, 10),
+            "y": random.uniform(-10, 10),
+            "z": random.uniform(-10, 10)
+        },
+        "rotation": {
+            "x": random.uniform(-1, 1),
+            "y": random.uniform(-1, 1),
+            "z": random.uniform(-1, 1)
+        }
     }
-    # Emit live data for 3D animation
-    socketio.emit('update_3d_model', data)
 
-    # Send data via RockBlock (example usage)
-    rockblock_message = f"Rotation: X={data['x_rotation']}, Y={data['y_rotation']}, Z={data['z_rotation']}"
-    send_rockblock_message(rockblock_message)
+    # Save the simulated force data to a file (optional)
+    save_flight_data(data)
 
+    # Return the simulated live force and rotation data
     return jsonify(data)
 
+def save_flight_data(data):
+    # Save data to a file (you can customize this if needed)
+    with open('force_data.json', 'w') as f:
+        json.dump(data, f)
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Bind to PORT from environment variable
-    socketio.run(app, host='0.0.0.0', port=port)
+    app.run(debug=True)
+
 
 
 
