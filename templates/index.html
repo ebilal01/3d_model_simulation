@@ -3,86 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satellite Simulation</title>
-    <!-- Babylon.js -->
+    <title>3D Satellite Simulation</title>
+    <!-- Include Babylon.js -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <!-- Cannon.js -->
-    <script src="https://cdn.babylonjs.com/cannon.js"></script>
-    <!-- Socket.IO -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; width: 100%; height: 100vh; }
-    </style>
+    <script src="https://cdn.babylonjs.com/babylon.inspector.bundle.js"></script>
+
+    <!-- Include other libraries as needed (e.g., Chart.js for altitude graphs) -->
 </head>
 <body>
-    <canvas id="renderCanvas"></canvas>
+    <h1>Live Data with 3D Satellite Model</h1>
+
+    <canvas id="renderCanvas" style="width: 100%; height: 600px;"></canvas>
+
     <script>
-        window.onload = function () {
-            const canvas = document.getElementById("renderCanvas");
-            const engine = new BABYLON.Engine(canvas, true);
-            const scene = new BABYLON.Scene(engine);
+        const baseURL = 'https://threed-model-simulation.onrender.com';  // Replace with your actual Render app URL
 
-            // Create the camera and set its parameters
-            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
-            camera.attachControl(canvas, true);
+        // Fetch the live data from the /live-data endpoint
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`${baseURL}/live-data`);
+                if (!response.ok) throw new Error('Failed to fetch live data');
+                const data = await response.json();
 
-            // Add a hemispheric light
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+                if (data.force) {
+                    applyForce(data.force);
+                }
 
-            // Enable physics using Cannon.js
-            scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
-
-            // Load the satellite model
-            BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
-                const satellite = meshes[0];
-                satellite.position = BABYLON.Vector3.Zero();
-                satellite.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
-
-                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(
-                    satellite,
-                    BABYLON.PhysicsImpostor.ConvexHullImpostor,
-                    { mass: 1 },
-                    scene
-                );
-
-                // Connect to the server via Socket.IO
-                const socket = io();
-
-                // Listen for live data for rotations
-                socket.on("update_3d_model", (data) => {
-                    console.log("Rotation data received:", data);
-
-                    // Apply the live rotation data to the satellite model
-                    satellite.rotation.x = BABYLON.Tools.ToRadians(data.x_rotation);
-                    satellite.rotation.y = BABYLON.Tools.ToRadians(data.y_rotation);
-                    satellite.rotation.z = BABYLON.Tools.ToRadians(data.z_rotation);
-                });
-
-                // Listen for force data (for physics simulation)
-                socket.on("force_data", (data) => {
-                    console.log("Force data received:", data);
-
-                    // Apply force to the satellite (example)
-                    const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
-                    satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
-                });
-            });
-
-            // Run the render loop
-            engine.runRenderLoop(function () {
-                scene.render();
-            });
-
-            // Resize the engine when the window is resized
-            window.addEventListener("resize", function () {
-                engine.resize();
-            });
+                if (data.rotation) {
+                    applyRotation(data.rotation);
+                }
+            } catch (error) {
+                console.error('Error fetching live data:', error);
+            }
         };
+
+        // Initialize the Babylon.js scene and camera
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        const scene = new BABYLON.Scene(engine);
+
+        // Create a camera
+        const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 15, BABYLON.Vector3.Zero(), scene);
+        camera.attachControl(canvas, true);
+
+        // Create a light
+        const light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
+
+        // Create the 3D model (satellite)
+        const satellite = BABYLON.MeshBuilder.CreateSphere("satellite", {diameter: 2}, scene);
+        satellite.position = new BABYLON.Vector3(0, 0, 0);  // Starting position
+
+        // Render loop
+        engine.runRenderLoop(() => {
+            scene.render();
+        });
+
+        // Resize the canvas when the window is resized
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+
+        // Apply the force vector to move the 3D model (satellite)
+        const applyForce = (force) => {
+            // Apply the force vector to the satellite's position
+            // You could scale the force values as needed for the scene
+            const scaleFactor = 0.1;  // Adjust to match the scale of your scene
+
+            const deltaX = force.x * scaleFactor;
+            const deltaY = force.y * scaleFactor;
+            const deltaZ = force.z * scaleFactor;
+
+            satellite.position.x += deltaX;
+            satellite.position.y += deltaY;
+            satellite.position.z += deltaZ;
+        };
+
+        // Apply the rotation vector to rotate the 3D model (satellite)
+        const applyRotation = (rotation) => {
+            // Apply rotation to the satellite's rotation
+            // You can adjust these values for more subtle or dramatic effects
+            satellite.rotation.x += rotation.x * 0.1;  // Scale rotation as needed
+            satellite.rotation.y += rotation.y * 0.1;
+            satellite.rotation.z += rotation.z * 0.1;
+        };
+
+        // Call fetchData periodically to get live updates (every 2 seconds)
+        setInterval(fetchData, 2000);
     </script>
 </body>
 </html>
+
 
 
 
