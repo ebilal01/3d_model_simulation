@@ -10,12 +10,8 @@ socketio = SocketIO(app)
 def index():
     return render_template("index.html")
 
-@socketio.on("connect")
-def on_connect():
-    print("Client connected")
-
-@socketio.on("request_force_data")
-def send_force_data():
+# Background task to send simulated force data
+def background_force_data():
     while True:
         # Simulating live data
         force_vector = {
@@ -23,8 +19,14 @@ def send_force_data():
             "fy": random.uniform(-10, 10),  # Random y-force
             "fz": random.uniform(-10, 10),  # Random z-force
         }
-        emit("force_data", force_vector)  # Send force data to client
+        socketio.emit("force_data", force_vector)  # Send force data to all clients
         time.sleep(1)  # Simulate data update every second
 
+@socketio.on("connect")
+def on_connect():
+    print("Client connected")
+
 if __name__ == "__main__":
+    socketio.start_background_task(background_force_data)  # Start the background task
     socketio.run(app, debug=True)
+
