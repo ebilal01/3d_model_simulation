@@ -7,13 +7,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Simulated storage for flight data
-flight_data = []
-
-def save_flight_data(data):
-    # Append to flight data for simulation
-    flight_data.append(data)
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -44,25 +37,22 @@ def receive_mt():
 
 @app.route('/live-data', methods=['GET'])
 def live_data():
-    # Simulate flight data with random values for testing
+    # Simulate real-time 3D data for testing
     data = {
-        "x_force": random.uniform(-90.0, 90.0),
-        "y_force": random.uniform(-180.0, 180.0),
-        "z_force": random.uniform(-10.0, 10.0),
-        "latitude": random.uniform(-90.0, 90.0),
-        "longitude": random.uniform(-180.0, 180.0),
-        "timestamps": [time.time() - i * 60 for i in range(10)],
-        "altitudes": [random.uniform(1000, 20000) for _ in range(10)],
+        "x_rotation": random.uniform(-90.0, 90.0),
+        "y_rotation": random.uniform(-180.0, 180.0),
+        "z_rotation": random.uniform(-10.0, 10.0),
     }
 
-    # Save flight data to file (simulation)
-    save_flight_data(data)
+    # Emit live data for 3D animation
+    socketio.emit('update_3d_model', data)
 
-    # Return the simulated live data
+    # Return live data (for testing purposes)
     return jsonify(data)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
