@@ -42,20 +42,14 @@
             // Load the satellite STL model from the static/models folder
             BABYLON.SceneLoader.ImportMesh("", "./static/models/", "SATELLITE.stl", scene, function (meshes) {
                 // The meshes array contains the loaded STL model
-
-                // Access the satellite mesh (assuming it's the first mesh)
                 var satellite = meshes[0];
-                
+
                 // Enable physics on the satellite mesh
-                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(satellite, BABYLON.PhysicsImpostor.MeshImpostor, { mass: 1 }, scene);
+                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(satellite, BABYLON.PhysicsImpostor.ConvexHullImpostor, { mass: 1 }, scene);
 
                 // Apply an initial force to simulate movement in space
                 var force = new BABYLON.Vector3(0, 0, 1); // Apply force in the Z-axis (forward motion)
                 satellite.physicsImpostor.applyForce(force, satellite.getAbsolutePosition());
-
-                // Optionally, apply torque to rotate the satellite
-                var torque = new BABYLON.Vector3(0, 1, 0); // Rotate around the Y-axis
-                satellite.physicsImpostor.applyTorque(torque);
 
                 // Log to check if the model loaded correctly
                 console.log('Satellite model loaded successfully');
@@ -74,6 +68,7 @@
     </script>
 </body>
 </html>
+
 
 
 
