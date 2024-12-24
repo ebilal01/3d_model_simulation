@@ -65,15 +65,10 @@
                 return arrow;
             };
 
+            // Create arrows and position them dynamically
             const xArrow = createArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
             const yArrow = createArrow(new BABYLON.Vector3(0, Math.PI / 2, 0), new BABYLON.Color3(0, 1, 0)); // Green
             const zArrow = createArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 0, 1)); // Blue
-
-            // Position arrows slightly away from the satellite to avoid recursive parenting
-            const offset = 2; // Distance from the satellite center
-            xArrow.position = new BABYLON.Vector3(offset, 0, 0);
-            yArrow.position = new BABYLON.Vector3(0, offset, 0);
-            zArrow.position = new BABYLON.Vector3(0, 0, offset);
 
             // Socket.IO for live telemetry updates
             const socket = io();
@@ -92,6 +87,12 @@
                     satellite.position.x = telemetry.position.x;
                     satellite.position.y = telemetry.position.y;
                     satellite.position.z = telemetry.position.z;
+
+                    // Update arrow positions relative to the satellite's current position
+                    const offset = 2; // Distance from the satellite center
+                    xArrow.position = new BABYLON.Vector3(satellite.position.x + offset, satellite.position.y, satellite.position.z);
+                    yArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y + offset, satellite.position.z);
+                    zArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y, satellite.position.z + offset);
                 }
             });
 
