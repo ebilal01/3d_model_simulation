@@ -14,7 +14,6 @@
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
 
-        // Create the scene
         const createScene = () => {
             const scene = new BABYLON.Scene(engine);
 
@@ -23,28 +22,29 @@
             camera.attachControl(canvas, true);
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-            // Load the satellite model
+            // Load satellite model
             let satellite;
-            BABYLON.SceneLoader.Append("./static/models/", "SATELLITE.gltf", scene, function () {
-                satellite = scene.meshes.find(mesh => mesh.name.includes("SATELLITE")); // Adjust name if needed
+            BABYLON.SceneLoader.Append("./static/models/", "SATELLITE.gltf", scene, () => {
+                satellite = scene.meshes[0];
                 console.log("Satellite loaded");
             });
 
             // Add directional arrows
-            const addArrow = (direction, color) => {
+            const createArrow = (direction, color) => {
                 const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { height: 1.5, diameterTop: 0, diameterBottom: 0.2 }, scene);
                 const arrowMaterial = new BABYLON.StandardMaterial("arrowMaterial", scene);
                 arrowMaterial.diffuseColor = color;
                 arrow.material = arrowMaterial;
 
-                // Align arrow based on direction
-                arrow.rotation = direction;
+                const rotationQuaternion = BABYLON.Quaternion.FromEulerVector(direction);
+                arrow.rotationQuaternion = rotationQuaternion;
+
                 return arrow;
             };
 
-            const xArrow = addArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
-            const yArrow = addArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 1, 0)); // Green
-            const zArrow = addArrow(new BABYLON.Vector3(0, 0, 0), new BABYLON.Color3(0, 0, 1)); // Blue
+            const xArrow = createArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
+            const yArrow = createArrow(new BABYLON.Vector3(0, Math.PI / 2, 0), new BABYLON.Color3(0, 1, 0)); // Green
+            const zArrow = createArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 0, 1)); // Blue
 
             // Attach arrows to satellite
             scene.onDataLoadedObservable.add(() => {
@@ -63,7 +63,7 @@
 
                 // Update satellite position and rotation
                 if (satellite) {
-                    satellite.rotation.y = BABYLON.Tools.ToRadians(telemetry.rotation);
+                    satellite.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, BABYLON.Tools.ToRadians(telemetry.rotation), 0);
                     satellite.position.x = telemetry.position.x;
                     satellite.position.y = telemetry.position.y;
                     satellite.position.z = telemetry.position.z;
