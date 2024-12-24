@@ -8,6 +8,8 @@
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script> <!-- Optional if you load complex models -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <!-- Load Cannon.js from CDN for physics -->
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -34,11 +36,11 @@
             var light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
             light.intensity = 0.7;
 
-            // Enable physics in the scene (use an impostor for physics simulation)
+            // Enable physics in the scene using Cannon.js plugin
             scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-            // Load the satellite STL model
-            BABYLON.SceneLoader.ImportMesh("", "./", "SATELLITE.stl", scene, function (meshes) {
+            // Load the satellite STL model from the static folder
+            BABYLON.SceneLoader.ImportMesh("", "./static/", "satellite.stl", scene, function (meshes) {
                 // The meshes array contains the loaded STL model
 
                 // Access the satellite mesh (assuming it's the first mesh)
