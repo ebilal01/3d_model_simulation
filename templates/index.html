@@ -7,7 +7,7 @@
     <!-- Babylon.js -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <!-- Cannon.js (Physics engine) -->
+    <!-- Cannon.js -->
     <script src="https://cdn.babylonjs.com/cannon.js"></script>
     <!-- Socket.IO -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -24,23 +24,19 @@
             const engine = new BABYLON.Engine(canvas, true);
             const scene = new BABYLON.Scene(engine);
 
-            // Setup the camera
             const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
 
-            // Add a light source
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-            // Enable physics using Cannon.js
             scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-            // Load the STL model
+            // Load the 3D model
             BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
                 const satellite = meshes[0];
                 satellite.position = BABYLON.Vector3.Zero();
                 satellite.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
 
-                // Create physics for the satellite
                 satellite.physicsImpostor = new BABYLON.PhysicsImpostor(
                     satellite,
                     BABYLON.PhysicsImpostor.ConvexHullImpostor,
@@ -48,38 +44,32 @@
                     scene
                 );
 
-                // Debugging: Confirm the satellite is loaded
-                console.log("Satellite model loaded:", satellite);
-
-                // Connect to the server via Socket.IO
-                const socket = io();
+                // Socket.IO connection
+                const socket = io.connect("https://threed-model-simulation.onrender.com");  // Update with your deployed URL
 
                 // Listen for force data from the server
                 socket.on("force_data", (data) => {
                     console.log("Force data received:", data);
 
-                    // Ensure data has valid force values
                     if (data.forceX === undefined || data.forceY === undefined || data.forceZ === undefined) {
                         console.log("Invalid force data received. Skipping force application.");
                         return;
                     }
 
-                    // Apply force to the satellite (example)
                     const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
                     console.log("Applying force:", forceVector);
                     satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
 
-                    // Rotate the satellite (you can animate it based on the force data)
-                    console.log(`Before rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
+                    // Apply rotation for animation
                     satellite.rotation.x += data.forceX * 0.01;
                     satellite.rotation.y += data.forceY * 0.01;
                     satellite.rotation.z += data.forceZ * 0.01;
-                    console.log(`After rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
+                    console.log(`Rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
 
-                    // Optionally: Create arrows to visualize force direction
+                    // Create force arrow to visualize force direction
                     const forceArrow = BABYLON.MeshBuilder.CreateLines("forceArrow", {
                         points: [BABYLON.Vector3.Zero(), forceVector],
-                        color: new BABYLON.Color3(1, 0, 0)  // Red color for the force arrow
+                        color: new BABYLON.Color3(1, 0, 0)
                     }, scene);
 
                     forceArrow.position = satellite.position;
@@ -98,6 +88,7 @@
     </script>
 </body>
 </html>
+
 
 
 
