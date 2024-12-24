@@ -6,7 +6,7 @@ socketio = SocketIO(app)
 
 @app.route('/')
 def index():
-    # This renders the HTML page with the 3D model viewer
+    # Render the main HTML file
     return render_template('index.html')
 
 @socketio.on('connect')
@@ -17,11 +17,13 @@ def handle_connect():
 @socketio.on('force_data')
 def handle_force_data(data):
     print(f"Received data: {data}")
-    # You can send responses to the frontend
-    emit('force_data', {'message': 'Data received by server!'})
+    # Example: Broadcast the force data back to all clients
+    socketio.emit('force_data', data)
 
 if __name__ == '__main__':
-    # Run the Flask server with SocketIO
+    # Run the Flask server
     socketio.run(app, host='0.0.0.0', port=5000)
+
+
 
 
