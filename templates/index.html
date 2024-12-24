@@ -4,70 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Satellite Simulation with Babylon.js</title>
-    <!-- Load Babylon.js from CDN -->
+    <!-- Load Babylon.js -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script> <!-- Optional if you load complex models -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <!-- Load Cannon.js from CDN for physics -->
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <!-- Load Cannon.js -->
     <script src="https://cdn.babylonjs.com/cannon.js"></script>
     <style>
         body { margin: 0; }
-        canvas { display: block; }
+        canvas { display: block; width: 100%; height: 100vh; }
     </style>
 </head>
 <body>
-    <div id="3d-container" style="width: 100%; height: 100vh;"></div> <!-- Container for Babylon.js canvas -->
+    <canvas id="renderCanvas"></canvas>
 
     <script>
         window.onload = function() {
-            // Create the Babylon.js engine and scene
-            var canvas = document.createElement("canvas"); // Create a canvas element dynamically
-            document.getElementById("3d-container").appendChild(canvas); // Add canvas to the HTML body
+            // Get the canvas and create an engine
+            var canvas = document.getElementById("renderCanvas");
             var engine = new BABYLON.Engine(canvas, true);
 
-            // Create a basic scene
+            // Create the scene
             var scene = new BABYLON.Scene(engine);
 
-            // Create a camera (ArcRotateCamera allows orbiting around the target)
-            var camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
+            // Create a camera
+            var camera = new BABYLON.ArcRotateCamera("ArcRotateCamera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
 
-            // Set a light to illuminate the scene
-            var light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
-            light.intensity = 0.7;
+            // Add lighting
+            var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-            // Enable physics in the scene using Cannon.js plugin
+            // Enable physics with Cannon.js
             scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-            // Load the satellite STL model from the static/models folder
+            // Load the SATELLITE.stl model
             BABYLON.SceneLoader.ImportMesh("", "./static/models/", "SATELLITE.stl", scene, function (meshes) {
-                // The meshes array contains the loaded STL model
                 var satellite = meshes[0];
 
-                // Enable physics on the satellite mesh
+                // Center and scale the satellite
+                satellite.position = BABYLON.Vector3.Zero();
+                satellite.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1); // Adjust scaling as needed
+
+                // Apply physics to the satellite
                 satellite.physicsImpostor = new BABYLON.PhysicsImpostor(satellite, BABYLON.PhysicsImpostor.ConvexHullImpostor, { mass: 1 }, scene);
 
-                // Apply an initial force to simulate movement in space
-                var force = new BABYLON.Vector3(0, 0, 1); // Apply force in the Z-axis (forward motion)
-                satellite.physicsImpostor.applyForce(force, satellite.getAbsolutePosition());
-
-                // Log to check if the model loaded correctly
-                console.log('Satellite model loaded successfully');
+                // Apply an initial force to simulate movement
+                satellite.physicsImpostor.applyForce(new BABYLON.Vector3(10, 0, 0), satellite.getAbsolutePosition());
             });
 
-            // Start rendering the scene
-            engine.runRenderLoop(function() {
+            // Render loop
+            engine.runRenderLoop(function () {
                 scene.render();
             });
 
-            // Resize the engine when the window is resized
-            window.addEventListener("resize", function() {
+            // Resize the engine on window resize
+            window.addEventListener("resize", function () {
                 engine.resize();
             });
         };
     </script>
 </body>
 </html>
+
 
 
 
