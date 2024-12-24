@@ -1,8 +1,8 @@
+from flask import Flask, render_template, jsonify
+from flask_socketio import SocketIO
 import json
 import eventlet
 import random
-from flask import Flask, jsonify
-from flask_socketio import SocketIO
 
 # Setup Flask and SocketIO
 app = Flask(__name__, static_folder="static", template_folder="templates")
