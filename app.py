@@ -1,28 +1,46 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
+import random
+import threading
+import time
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 @app.route('/')
 def index():
-    # Render the main HTML file
+    # Renders the HTML page with the 3D model viewer
     return render_template('index.html')
 
-@socketio.on('connect')
-def handle_connect():
-    print("Client connected")
-    emit('force_data', {'message': 'Hello from the server!'})
+@app.route('/rockblock', methods=['POST'])
+def handle_rockblock():
+    # Parse RockBlock webhook data
+    data = request.json
+    imei = data.get('imei', 'Unknown')
+    force_x = random.uniform(-5, 5)  # Simulated force values
+    force_y = random.uniform(-5, 5)
+    force_z = random.uniform(-5, 5)
 
-@socketio.on('force_data')
-def handle_force_data(data):
-    print(f"Received data: {data}")
-    # Example: Broadcast the force data back to all clients
-    socketio.emit('force_data', data)
+    # Emit the force data to all connected clients
+    socketio.emit('force_data', {'forceX': force_x, 'forceY': force_y, 'forceZ': force_z})
+    return "Data received"
+
+def simulate_forces():
+    # Continuously simulate and send random forces
+    while True:
+        force_x = random.uniform(-5, 5)
+        force_y = random.uniform(-5, 5)
+        force_z = random.uniform(-5, 5)
+        socketio.emit('force_data', {'forceX': force_x, 'forceY': force_y, 'forceZ': force_z})
+        time.sleep(2)  # Update forces every 2 seconds
+
+# Start a background thread for force simulation
+thread = threading.Thread(target=simulate_forces, daemon=True)
+thread.start()
 
 if __name__ == '__main__':
-    # Run the Flask server
     socketio.run(app, host='0.0.0.0', port=5000)
+
 
 
 
