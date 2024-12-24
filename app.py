@@ -12,14 +12,6 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 # Use eventlet with Flask-SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-# Setup for RockBlock satellite communication
-rockblock = RockBlock(serial.Serial("/dev/ttyUSB0", baudrate=19200))  # Update with your actual port
-
-def send_rockblock_message(message):
-    """Send a message via the RockBlock satellite modem."""
-    rockblock.send_message(message)
-    print(f"Sent message: {message}")
-
 @app.route('/')
 def index():
     return render_template('index.html')
