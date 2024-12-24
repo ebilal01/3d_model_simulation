@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Model Viewer and Simulation</title>
-    <!-- Load Three.js from the main directory -->
-    <script type="module">
-        import * as THREE from './three.module.min.js';
-    </script>
-    <!-- Load STLLoader from CDN -->
-    <script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
+    <!-- Load Babylon.js from CDN -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script> <!-- Optional if you load complex models -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <style>
         body { margin: 0; }
@@ -17,34 +14,38 @@
     </style>
 </head>
 <body>
-    <div id="3d-container"></div>
-
+    <div id="3d-container" style="width: 100%; height: 100vh;"></div> <!-- Container for Babylon.js canvas -->
+    
     <script>
         window.onload = function() {
-            // Initialize Three.js scene and objects
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+            // Create the Babylon.js engine and scene
+            var canvas = document.createElement("canvas"); // Create a canvas element dynamically
+            document.getElementById("3d-container").appendChild(canvas); // Add canvas to the HTML body
+            var engine = new BABYLON.Engine(canvas, true);
 
-            const geometry = new THREE.BoxGeometry();
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            const cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
+            // Create a basic scene
+            var scene = new BABYLON.Scene(engine);
 
-            camera.position.z = 5;
+            // Create a camera (ArcRotateCamera allows orbiting around the target)
+            var camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
 
-            const animate = function () {
-                requestAnimationFrame(animate);
+            // Set a light to illuminate the scene
+            var light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
+            light.intensity = 0.7;
 
-                cube.rotation.x += 0.01;
-                cube.rotation.y += 0.01;
+            // Create a simple box
+            var box = BABYLON.MeshBuilder.CreateBox("box", { size: 2 }, scene);
 
-                renderer.render(scene, camera);
-            };
+            // Start rendering the scene
+            engine.runRenderLoop(function() {
+                scene.render();
+            });
 
-            animate();
+            // Resize the engine when the window is resized
+            window.addEventListener("resize", function() {
+                engine.resize();
+            });
         };
     </script>
 </body>
