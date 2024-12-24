@@ -24,7 +24,7 @@
             const engine = new BABYLON.Engine(canvas, true);
             const scene = new BABYLON.Scene(engine);
 
-            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 3, 50, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
 
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
@@ -43,16 +43,33 @@
                     scene
                 );
 
-                // Connect to the server via Socket.IO
+                // Force arrow setup
+                const arrowMaterial = new BABYLON.StandardMaterial("arrowMat", scene);
+                arrowMaterial.diffuseColor = BABYLON.Color3.Red();
+
+                const forceArrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {
+                    height: 1,
+                    diameterTop: 0,
+                    diameterBottom: 0.2,
+                }, scene);
+                forceArrow.material = arrowMaterial;
+                forceArrow.isVisible = false;
+
                 const socket = io();
 
-                // Listen for force data from the server
                 socket.on("force_data", (data) => {
                     console.log("Force data received:", data);
 
-                    // Apply force to the satellite (example)
+                    // Apply force to the satellite
                     const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
                     satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
+
+                    // Update force arrow
+                    const arrowLength = forceVector.length() / 2;
+                    forceArrow.scaling.y = arrowLength;
+                    forceArrow.position = satellite.getAbsolutePosition();
+                    forceArrow.isVisible = true;
+                    forceArrow.lookAt(satellite.getAbsolutePosition().add(forceVector));
                 });
             });
 
