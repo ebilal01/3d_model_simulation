@@ -4,7 +4,6 @@ import random
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO
 import serial
-from rockblock import RockBlock
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
