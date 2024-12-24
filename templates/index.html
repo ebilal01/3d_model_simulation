@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Model Viewer and Simulation</title>
-    <!-- Load Three.js from CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+    <!-- Load Three.js from the main directory -->
+    <script type="module">
+        import * as THREE from './three.module.min.js';
+    </script>
     <!-- Load STLLoader from CDN -->
     <script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -15,62 +17,39 @@
     </style>
 </head>
 <body>
-    <script>
-        // Wait for the document to load
-        document.addEventListener('DOMContentLoaded', function () {
-            var scene, camera, renderer, loader, model, socket;
+    <div id="3d-container"></div>
 
-            // Set up the scene
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
+    <script>
+        window.onload = function() {
+            // Initialize Three.js scene and objects
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // Create the lights
-            var light = new THREE.AmbientLight(0x404040); // Ambient light
-            scene.add(light);
-            var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(1, 1, 1).normalize();
-            scene.add(directionalLight);
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
 
-            // Load the STL file using STLLoader
-            loader = new THREE.STLLoader();
-            loader.load('path/to/your/model.stl', function (geometry) {
-                var material = new THREE.MeshPhongMaterial({ color: 0x0055ff });
-                model = new THREE.Mesh(geometry, material);
-                scene.add(model);
-            });
+            camera.position.z = 5;
 
-            // Set the camera position
-            camera.position.z = 10;
-
-            // Setup socket.io connection
-            socket = io.connect('https://threed-model-simulation.onrender.com'); // Use your actual server URL
-
-            socket.on('force_data', function (data) {
-                console.log('Received force data:', data);
-                // You can update the model's position or perform some action with the data here
-            });
-
-            // Window resize event
-            window.addEventListener('resize', function () {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
-            // Animation loop to render the scene
-            function animate() {
+            const animate = function () {
                 requestAnimationFrame(animate);
-                if (model) model.rotation.x += 0.01; // Rotate the model
+
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+
                 renderer.render(scene, camera);
-            }
+            };
+
             animate();
-        });
+        };
     </script>
 </body>
 </html>
+
 
 
 
