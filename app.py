@@ -5,7 +5,7 @@ import eventlet
 import random
 
 # Setup Flask and SocketIO
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="templates")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Serve the main page
@@ -18,7 +18,7 @@ def generate_live_data():
     while True:
         # Example live telemetry data
         telemetry_data = {
-            "rotation": random.uniform(0, 360),  # Random rotation for example
+            "rotation": random.uniform(0, 360),  # Rotation in degrees
             "position": {
                 "x": random.uniform(-5, 5),
                 "y": random.uniform(-5, 5),
@@ -35,7 +35,6 @@ def handle_connect():
 if __name__ == "__main__":
     socketio.start_background_task(generate_live_data)
     socketio.run(app, host="0.0.0.0", port=5000)
-
 
 
 
