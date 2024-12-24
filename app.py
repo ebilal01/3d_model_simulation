@@ -2,44 +2,31 @@ from flask import Flask, render_template, jsonify
 import random
 import time
 import json
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-
-# Simulated function to save flight data (you may adjust this to save to a file)
-def save_flight_data(data):
-    with open("flight_data.json", "w") as f:
-        json.dump(data, f)
+socketio = SocketIO(app)
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # Serve the frontend HTML
+    # Render the main HTML file
+    return render_template('index.html')
 
-@app.route('/live-data', methods=['GET'])
-def live_data():
-    # Simulate rotation and force data for testing
-    data = {
-        "rotation": {
-            "x": random.uniform(0, 2 * 3.14159),  # Random rotation on x-axis
-            "y": random.uniform(0, 2 * 3.14159),  # Random rotation on y-axis
-            "z": random.uniform(0, 2 * 3.14159)   # Random rotation on z-axis
-        },
-        "forces": [
-            {
-                "x": random.uniform(-10, 10),
-                "y": random.uniform(-10, 10),
-                "z": random.uniform(-10, 10),
-                "magnitude": random.uniform(1, 20)
-            } for _ in range(3)
-        ]
-    }
+@socketio.on('connect')
+def handle_connect():
+    print("Client connected")
+    emit('force_data', {'message': 'Hello from the server!'})
 
-    # Save flight data to file (optional)
-    save_flight_data(data)
-
-    return jsonify(data)  # Return the simulated live data
+@socketio.on('force_data')
+def handle_force_data(data):
+    print(f"Received data: {data}")
+    # Example: Broadcast the force data back to all clients
+    socketio.emit('force_data', data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Run the Flask server
+    socketio.run(app, host='0.0.0.0', port=5000)
+
 
 
 
