@@ -3,12 +3,22 @@ import time
 import random
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO
+import serial
+from rockblock import RockBlock
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Use eventlet with Flask-SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
+# Setup for RockBlock satellite communication
+rockblock = RockBlock(serial.Serial("/dev/ttyUSB0", baudrate=19200))  # Update with your actual port
+
+def send_rockblock_message(message):
+    """Send a message via the RockBlock satellite modem."""
+    rockblock.send_message(message)
+    print(f"Sent message: {message}")
 
 @app.route('/')
 def index():
@@ -24,6 +34,11 @@ def live_data():
     }
     # Emit live data for 3D animation
     socketio.emit('update_3d_model', data)
+
+    # Send data via RockBlock (example usage)
+    rockblock_message = f"Rotation: X={data['x_rotation']}, Y={data['y_rotation']}, Z={data['z_rotation']}"
+    send_rockblock_message(rockblock_message)
+
     return jsonify(data)
 
 if __name__ == '__main__':
