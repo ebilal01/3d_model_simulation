@@ -47,7 +47,7 @@
                 console.log("Satellite loaded");
             });
 
-            // Create arrows
+            // Create arrows at relative positions to the satellite
             const createArrow = (direction, color) => {
                 const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {
                     height: 1.5,
@@ -59,16 +59,20 @@
                 arrowMaterial.diffuseColor = color;
                 arrow.material = arrowMaterial;
 
+                // Rotate arrow to point in the right direction
                 const rotationQuaternion = BABYLON.Quaternion.FromEulerVector(direction);
                 arrow.rotationQuaternion = rotationQuaternion;
 
                 return arrow;
             };
 
-            // Create arrows and position them dynamically
+            // Create arrows and initial positions
             const xArrow = createArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
             const yArrow = createArrow(new BABYLON.Vector3(0, Math.PI / 2, 0), new BABYLON.Color3(0, 1, 0)); // Green
             const zArrow = createArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 0, 1)); // Blue
+
+            // Offset for arrows from satellite
+            const arrowOffset = 2; // Distance of arrows from the satellite center
 
             // Socket.IO for live telemetry updates
             const socket = io();
@@ -88,11 +92,11 @@
                     satellite.position.y = telemetry.position.y;
                     satellite.position.z = telemetry.position.z;
 
-                    // Update arrow positions relative to the satellite's current position
-                    const offset = 2; // Distance from the satellite center
-                    xArrow.position = new BABYLON.Vector3(satellite.position.x + offset, satellite.position.y, satellite.position.z);
-                    yArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y + offset, satellite.position.z);
-                    zArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y, satellite.position.z + offset);
+                    // Update arrows' positions relative to satellite's current position
+                    // Ensure arrows follow satellite position
+                    xArrow.position = new BABYLON.Vector3(satellite.position.x + arrowOffset, satellite.position.y, satellite.position.z);
+                    yArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y + arrowOffset, satellite.position.z);
+                    zArrow.position = new BABYLON.Vector3(satellite.position.x, satellite.position.y, satellite.position.z + arrowOffset);
                 }
             });
 
@@ -110,9 +114,6 @@
     </script>
 </body>
 </html>
-
-
-
 
 
 
