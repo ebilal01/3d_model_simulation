@@ -23,7 +23,8 @@
 
     <!-- Babylon.js CDN -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylonjs.loaders.min.js"></script> <!-- Load the STL loader -->
+    <script src="https://cdn.babylonjs.com/babylon.gui.min.js"></script> <!-- Load the GUI plugin -->
 
     <script>
         const canvas = document.getElementById("renderCanvas");
@@ -33,7 +34,7 @@
         // Load the STL model
         let satelliteModel;
 
-        BABYLON.SceneLoader.ImportMesh("", "static/models/", "SATELLITE.stl", scene, function (meshes) {
+        BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
             satelliteModel = meshes[0];  // Assuming it's the first mesh loaded
             satelliteModel.position = BABYLON.Vector3.Zero();  // Keep the model centered
         });
@@ -129,6 +130,7 @@
     </script>
 </body>
 </html>
+
 
 
 
