@@ -3,58 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model with Force Arrows</title>
+    <title>Satellite Simulation</title>
+    <!-- Babylon.js -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/babylon.stlLoader.min.js"></script> <!-- Add STL loader -->
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <!-- Cannon.js (Physics engine) -->
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; width: 100%; height: 100vh; }
+    </style>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
-
     <script>
-        // Initialize the engine
-        var canvas = document.getElementById("renderCanvas");
-        var engine = new BABYLON.Engine(canvas, true);
+        window.onload = function () {
+            const canvas = document.getElementById("renderCanvas");
+            const engine = new BABYLON.Engine(canvas, true);
+            const scene = new BABYLON.Scene(engine);
 
-        // Create the scene
-        var scene = new BABYLON.Scene(engine);
+            // Setup the camera
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
 
-        // Create the camera
-        var camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 10, BABYLON.Vector3.Zero(), scene);
-        camera.attachControl(canvas, true);
+            // Add a light source
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-        // Create light
-        var light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
+            // Enable physics using Cannon.js
+            scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-        // Load the satellite model
-        BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
-            var satelliteModel = meshes[0]; // Assuming it's the first mesh loaded
-            satelliteModel.position = BABYLON.Vector3.Zero(); // Keep the model centered
+            // Load the STL model
+            BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
+                const satellite = meshes[0];
+                satellite.position = BABYLON.Vector3.Zero();
+                satellite.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
 
-            // Add force arrows or other objects as needed
-            var forceArrow = BABYLON.MeshBuilder.CreateLines("forceArrow", {
-                points: [BABYLON.Vector3.Zero(), new BABYLON.Vector3(1, 0, 0)] // Simple arrow in the X direction
-            }, scene);
+                // Create physics for the satellite
+                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(
+                    satellite,
+                    BABYLON.PhysicsImpostor.ConvexHullImpostor,
+                    { mass: 1 },
+                    scene
+                );
 
-            // Add label (if required)
-            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
-            var label = new BABYLON.GUI.TextBlock();
-            label.text = "Force Magnitude: 10N";
-            label.color = "white";
-            label.fontSize = 24;
-            advancedTexture.addControl(label); // Add the label to the UI
-        });
+                // Connect to the server via Socket.IO
+                const socket = io();
 
-        // Render the scene
-        engine.runRenderLoop(function () {
-            scene.render();
-        });
+                // Listen for force data from the server
+                socket.on("force_data", (data) => {
+                    console.log("Force data received:", data);
 
-        window.addEventListener("resize", function () {
-            engine.resize();
-        });
+                    // Apply force to the satellite (example)
+                    const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
+                    satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
+
+                    // Rotate the satellite (you can animate it based on the force data)
+                    satellite.rotation.x += data.forceX * 0.01;
+                    satellite.rotation.y += data.forceY * 0.01;
+                    satellite.rotation.z += data.forceZ * 0.01;
+
+                    // Optionally: Create arrows to visualize force direction
+                    const forceArrow = BABYLON.MeshBuilder.CreateLines("forceArrow", {
+                        points: [BABYLON.Vector3.Zero(), forceVector],
+                        color: new BABYLON.Color3(1, 0, 0)  // Red color for the force arrow
+                    }, scene);
+
+                    forceArrow.position = satellite.position;
+                });
+            });
+
+            engine.runRenderLoop(function () {
+                scene.render();
+            });
+
+            window.addEventListener("resize", function () {
+                engine.resize();
+            });
+        };
     </script>
 </body>
 </html>
+
 
 
 
