@@ -21,7 +21,7 @@
 <body>
     <script>
         // WebSocket connection
-        const socket = io.connect('https://3d-model-simulation.onrender.com');
+        const socket = io.connect();
 
         // 3D Scene setup
         const scene = new THREE.Scene();
@@ -33,7 +33,7 @@
         // Load STL model
         const loader = new THREE.STLLoader();
         let model;
-        loader.load('static/models/SATELLITE.stl', function (geometry) {
+        loader.load('/static/models/SATELLITE.stl', function (geometry) {
             const material = new THREE.MeshNormalMaterial();
             model = new THREE.Mesh(geometry, material);
             model.position.set(0, 0, 0); // Initial position
@@ -73,9 +73,7 @@
                 arrowHelper.setLength(force.length() / 10); // Adjust length for visibility
             }
         });
-
-        // Request simulated force data from the server
-        socket.emit("request_force_data");
     </script>
 </body>
 </html>
+
