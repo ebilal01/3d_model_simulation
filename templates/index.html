@@ -29,9 +29,14 @@
                 console.log("Satellite loaded");
             });
 
-            // Add directional arrows
+            // Create arrows
             const createArrow = (direction, color) => {
-                const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { height: 1.5, diameterTop: 0, diameterBottom: 0.2 }, scene);
+                const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {
+                    height: 1.5,
+                    diameterTop: 0,
+                    diameterBottom: 0.2,
+                }, scene);
+
                 const arrowMaterial = new BABYLON.StandardMaterial("arrowMaterial", scene);
                 arrowMaterial.diffuseColor = color;
                 arrow.material = arrowMaterial;
@@ -46,14 +51,11 @@
             const yArrow = createArrow(new BABYLON.Vector3(0, Math.PI / 2, 0), new BABYLON.Color3(0, 1, 0)); // Green
             const zArrow = createArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 0, 1)); // Blue
 
-            // Attach arrows to satellite
-            scene.onDataLoadedObservable.add(() => {
-                if (satellite) {
-                    xArrow.parent = satellite;
-                    yArrow.parent = satellite;
-                    zArrow.parent = satellite;
-                }
-            });
+            // Position arrows slightly away from the satellite to avoid recursive parenting
+            const offset = 2; // Distance from the satellite center
+            xArrow.position = new BABYLON.Vector3(offset, 0, 0);
+            yArrow.position = new BABYLON.Vector3(0, offset, 0);
+            zArrow.position = new BABYLON.Vector3(0, 0, offset);
 
             // Socket.IO for live telemetry updates
             const socket = io();
@@ -63,7 +65,12 @@
 
                 // Update satellite position and rotation
                 if (satellite) {
-                    satellite.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, BABYLON.Tools.ToRadians(telemetry.rotation), 0);
+                    satellite.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
+                        0,
+                        BABYLON.Tools.ToRadians(telemetry.rotation),
+                        0
+                    );
+
                     satellite.position.x = telemetry.position.x;
                     satellite.position.y = telemetry.position.y;
                     satellite.position.z = telemetry.position.z;
@@ -84,6 +91,7 @@
     </script>
 </body>
 </html>
+
 
 
 
