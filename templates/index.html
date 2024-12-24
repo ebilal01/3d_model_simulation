@@ -5,57 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.js"></script>
     <title>3D Satellite Visualization</title>
 </head>
 <body>
     <canvas id="renderCanvas" touch-action="none"></canvas>
     <script>
-        // Get canvas and engine
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
 
-        // Create scene
+        // Create the scene
         const createScene = () => {
             const scene = new BABYLON.Scene(engine);
 
-            // Add a camera and lights
-            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
+            // Camera and light
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
-
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-            // Load satellite model
+            // Load the satellite model
+            let satellite;
             BABYLON.SceneLoader.Append("./static/models/", "SATELLITE.gltf", scene, function () {
+                satellite = scene.meshes.find(mesh => mesh.name.includes("SATELLITE")); // Adjust name if needed
                 console.log("Satellite loaded");
             });
 
-            // Create arrows dynamically
-            const createArrow = (direction, color) => {
-                const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { height: 1.5, diameterTop: 0, diameterBottom: 0.1, tessellation: 8 }, scene);
-                arrow.scaling = new BABYLON.Vector3(0.1, 0.5, 0.1); // Make the arrow thinner
-                arrow.rotation = direction.toEulerAngles(); // Align with direction
-                arrow.material = new BABYLON.StandardMaterial("arrowMaterial", scene);
-                arrow.material.diffuseColor = color;
+            // Add directional arrows
+            const addArrow = (direction, color) => {
+                const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { height: 1.5, diameterTop: 0, diameterBottom: 0.2 }, scene);
+                const arrowMaterial = new BABYLON.StandardMaterial("arrowMaterial", scene);
+                arrowMaterial.diffuseColor = color;
+                arrow.material = arrowMaterial;
+
+                // Align arrow based on direction
+                arrow.rotation = direction;
                 return arrow;
             };
 
-            const xArrow = createArrow(new BABYLON.Vector3(1, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red arrow (X-axis)
-            const yArrow = createArrow(new BABYLON.Vector3(0, 1, 0), new BABYLON.Color3(0, 1, 0)); // Green arrow (Y-axis)
-            const zArrow = createArrow(new BABYLON.Vector3(0, 0, 1), new BABYLON.Color3(0, 0, 1)); // Blue arrow (Z-axis)
+            const xArrow = addArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
+            const yArrow = addArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 1, 0)); // Green
+            const zArrow = addArrow(new BABYLON.Vector3(0, 0, 0), new BABYLON.Color3(0, 0, 1)); // Blue
 
-            // Attach arrows to satellite model
+            // Attach arrows to satellite
             scene.onDataLoadedObservable.add(() => {
-                const satellite = scene.meshes.find(mesh => mesh.name.includes("SATELLITE")); // Adjust if satellite has a specific name
-                xArrow.parent = satellite;
-                yArrow.parent = satellite;
-                zArrow.parent = satellite;
+                if (satellite) {
+                    xArrow.parent = satellite;
+                    yArrow.parent = satellite;
+                    zArrow.parent = satellite;
+                }
             });
 
-            // Animate satellite rotation
-            scene.onBeforeRenderObservable.add(() => {
-                const satellite = scene.meshes.find(mesh => mesh.name.includes("SATELLITE"));
+            // Socket.IO for live telemetry updates
+            const socket = io();
+
+            socket.on("update_telemetry", data => {
+                const telemetry = JSON.parse(data);
+
+                // Update satellite position and rotation
                 if (satellite) {
-                    satellite.rotation.y += 0.01; // Continuous rotation
+                    satellite.rotation.y = BABYLON.Tools.ToRadians(telemetry.rotation);
+                    satellite.position.x = telemetry.position.x;
+                    satellite.position.y = telemetry.position.y;
+                    satellite.position.z = telemetry.position.z;
                 }
             });
 
@@ -73,6 +84,7 @@
     </script>
 </body>
 </html>
+
 
 
 
