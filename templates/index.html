@@ -6,7 +6,7 @@
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.js"></script>
-    <script src="https://cdn.babylonjs.com/earcut.min.js"></script> <!-- Add earcut here -->
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script> <!-- Earcut for text -->
     <title>3D Satellite Visualization</title>
 </head>
 <body>
@@ -30,7 +30,7 @@
                 console.log("Satellite loaded");
             });
 
-            // Create arrows
+            // Create arrows for force vectors
             const createArrow = (direction, color) => {
                 const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {
                     height: 1.5,
@@ -48,27 +48,16 @@
                 return arrow;
             };
 
-            // Create force arrows
+            // Define force arrows
             const xArrow = createArrow(new BABYLON.Vector3(Math.PI / 2, 0, 0), new BABYLON.Color3(1, 0, 0)); // Red
             const yArrow = createArrow(new BABYLON.Vector3(0, Math.PI / 2, 0), new BABYLON.Color3(0, 1, 0)); // Green
             const zArrow = createArrow(new BABYLON.Vector3(0, 0, Math.PI / 2), new BABYLON.Color3(0, 0, 1)); // Blue
 
-            // Position arrows slightly away from the satellite to avoid recursive parenting
-            const offset = 2; // Distance from the satellite center
+            // Position arrows slightly away from the satellite
+            const offset = 2;
             xArrow.position = new BABYLON.Vector3(offset, 0, 0);
             yArrow.position = new BABYLON.Vector3(0, offset, 0);
             zArrow.position = new BABYLON.Vector3(0, 0, offset);
-
-            // Labels for magnitude
-            const createLabel = (text, position) => {
-                const label = BABYLON.MeshBuilder.CreateText("label", { text: text, size: 2 }, scene);
-                label.position = position;
-                return label;
-            };
-
-            const xLabel = createLabel("X: 0", xArrow.position.add(new BABYLON.Vector3(0, 0.5, 0)));
-            const yLabel = createLabel("Y: 0", yArrow.position.add(new BABYLON.Vector3(0, 0.5, 0)));
-            const zLabel = createLabel("Z: 0", zArrow.position.add(new BABYLON.Vector3(0, 0.5, 0)));
 
             // Socket.IO for live telemetry updates
             const socket = io();
@@ -76,30 +65,25 @@
             socket.on("update_telemetry", data => {
                 const telemetry = JSON.parse(data);
 
-                // Update satellite position and rotation
+                // Update satellite rotation and position
                 if (satellite) {
                     satellite.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
                         0,
                         BABYLON.Tools.ToRadians(telemetry.rotation),
                         0
                     );
+                    satellite.position = new BABYLON.Vector3(telemetry.position.x, telemetry.position.y, telemetry.position.z);
+                }
 
-                    satellite.position.x = telemetry.position.x;
-                    satellite.position.y = telemetry.position.y;
-                    satellite.position.z = telemetry.position.z;
-
-                    // Update force vectors based on telemetry data (assuming telemetry provides force data)
-                    const force = telemetry.force || { x: 0, y: 0, z: 0 };
-
-                    // Update the force vectors' positions and rotations
-                    xArrow.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(new BABYLON.Vector3(Math.PI / 2, 0, 0));
-                    yArrow.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(new BABYLON.Vector3(0, Math.PI / 2, 0));
+                // Animate arrows based on the incoming telemetry data
+                if (xArrow) {
+                    xArrow.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(new BABYLON.Vector3(Math.PI / 2, telemetry.rotation, 0));
+                }
+                if (yArrow) {
+                    yArrow.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(new BABYLON.Vector3(0, Math.PI / 2, telemetry.rotation));
+                }
+                if (zArrow) {
                     zArrow.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(new BABYLON.Vector3(0, 0, Math.PI / 2));
-
-                    // Update the force vector labels to reflect their magnitudes
-                    xLabel.text = `X: ${force.x.toFixed(2)}`;
-                    yLabel.text = `Y: ${force.y.toFixed(2)}`;
-                    zLabel.text = `Z: ${force.z.toFixed(2)}`;
                 }
             });
 
@@ -117,8 +101,6 @@
     </script>
 </body>
 </html>
-
-
 
 
 
