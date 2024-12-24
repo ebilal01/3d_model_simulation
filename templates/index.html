@@ -5,26 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Model Simulation</title>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 <body>
     <h1>3D Model Simulation</h1>
-    <p>Connected to the server.</p>
+    <div id="map" style="width: 100%; height: 500px;"></div>
+    <canvas id="altitudeGraph" style="width: 100%; height: 300px;"></canvas>
+
     <script>
-        const socket = io();
-        socket.on('connect', () => {
-            console.log('Connected to server');
+        const baseURL = 'https://threed-model-simulation.onrender.com'; // Replace with your Render app URL
+
+        // Leaflet Map Initialization
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let satelliteMarker = L.marker([0, 0]).addTo(map);
+
+        // Chart.js Graph Initialization
+        const ctx = document.getElementById('altitudeGraph').getContext('2d');
+        const altitudeGraph = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Altitude',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1,
+                }],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Time' } },
+                    y: { title: { display: true, text: 'Altitude (meters)' } },
+                },
+            },
         });
 
-        socket.on('message', (msg) => {
-            console.log('Received from server:', msg);
-        });
+        // Update Map with New Coordinates
+        const updateMap = (latitude, longitude) => {
+            satelliteMarker.setLatLng([latitude, longitude]);
+            map.setView([latitude, longitude], 4);
+        };
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-        });
+        // Update Graph with New Data
+        const updateGraph = (timestamps, altitudes) => {
+            altitudeGraph.data.labels = timestamps.map(ts => new Date(ts * 1000).toLocaleTimeString());
+            altitudeGraph.data.datasets[0].data = altitudes;
+            altitudeGraph.update();
+        };
 
-        // Example of sending a message
-        socket.send('Hello, Server!');
+        // Fetch Live Data and Animate
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`${baseURL}/live-data`);
+                if (!response.ok) throw new Error('Failed to fetch live data');
+                const data = await response.json();
+
+                if (data.latitude && data.longitude) {
+                    updateMap(data.latitude, data.longitude);
+                }
+
+                if (data.timestamps && data.altitudes) {
+                    updateGraph(data.timestamps, data.altitudes);
+                }
+            } catch (error) {
+                console.error('Error fetching live data:', error);
+            }
+        };
+
+        // Poll for live data every 10 seconds
+        setInterval(fetchData, 10000);
+        fetchData();
     </script>
 </body>
 </html>
