@@ -1,55 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Babylon.js 3D Model Animation</title>
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babylon.js GLTF Model Animation</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        // Get the canvas element
+        const canvas = document.getElementById("renderCanvas");
 
-  <canvas id="renderCanvas" style="width: 100%; height: 100%;"></canvas>
+        // Create the Babylon.js engine
+        const engine = new BABYLON.Engine(canvas, true);
 
-  <script>
-    // Create the Babylon.js engine and scene
-    const canvas = document.getElementById("renderCanvas");
-    const engine = new BABYLON.Engine(canvas, true);
-    const scene = new BABYLON.Scene(engine);
+        // Create the scene
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
 
-    // Create a basic camera and light
-    const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 10, BABYLON.Vector3.Zero(), scene);
-    camera.attachControl(canvas, true);
-    camera.lowerRadiusLimit = 5;
-    camera.upperRadiusLimit = 20;
+            // Add a camera
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.5, 10, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
 
-    const light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
-    light.intensity = 0.7;
+            // Add a light
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-    // Load the 3D model (adjust the scaling)
-    BABYLON.SceneLoader.Append("https://your-model-url/", "SATELLITE.gltf", scene, function (scene) {
-      const model = scene.getMeshByName("SATELLITE");
+            // Load the GLTF model
+            BABYLON.SceneLoader.Append("static/models/", "SATELLITE.gltf", scene, function () {
+                console.log("Model loaded successfully!");
 
-      // Scale the model to fit within a smaller area
-      model.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5); // Adjust this scaling factor
+                // Play all animations
+                scene.animationGroups.forEach(group => {
+                    group.start(true, 1.0);
+                });
+            }, null, function (scene, message) {
+                console.error("Error loading model:", message);
+            });
 
-      // Set up animations if any
-      const animationGroup = scene.animationGroups[0]; // Assuming the model has animations
-      animationGroup.start(true, 1.0, animationGroup.from, animationGroup.to);
+            return scene;
+        };
 
-      // Render the scene
-      engine.runRenderLoop(function () {
-        scene.render();
-      });
-    });
+        const scene = createScene();
 
-    // Resize the engine if the window size changes
-    window.addEventListener("resize", function () {
-      engine.resize();
-    });
-  </script>
+        // Render the scene
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
 
+        // Resize the engine on window resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
 </body>
 </html>
+
 
 
 
