@@ -1,32 +1,27 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
-import random
-import time
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    # This renders the HTML page with the 3D model viewer
+    return render_template('index.html')
 
-# Background task to send simulated force data
-def background_force_data():
-    while True:
-        # Simulating live data
-        force_vector = {
-            "fx": random.uniform(-10, 10),  # Random x-force
-            "fy": random.uniform(-10, 10),  # Random y-force
-            "fz": random.uniform(-10, 10),  # Random z-force
-        }
-        socketio.emit("force_data", force_vector)  # Send force data to all clients
-        time.sleep(1)  # Simulate data update every second
-
-@socketio.on("connect")
-def on_connect():
+@socketio.on('connect')
+def handle_connect():
     print("Client connected")
+    emit('force_data', {'message': 'Hello from the server!'})
 
-if __name__ == "__main__":
-    socketio.start_background_task(background_force_data)  # Start the background task
-    socketio.run(app, debug=True)
+@socketio.on('force_data')
+def handle_force_data(data):
+    print(f"Received data: {data}")
+    # You can send responses to the frontend
+    emit('force_data', {'message': 'Data received by server!'})
+
+if __name__ == '__main__':
+    # Run the Flask server with SocketIO
+    socketio.run(app, host='0.0.0.0', port=5000)
+
 
