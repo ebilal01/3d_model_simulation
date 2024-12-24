@@ -1,94 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satellite Simulation</title>
-    <!-- Babylon.js -->
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <!-- Cannon.js -->
-    <script src="https://cdn.babylonjs.com/cannon.js"></script>
-    <!-- Socket.IO -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; width: 100%; height: 100vh; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Babylon.js 3D Model Animation</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
-<body>
-    <canvas id="renderCanvas"></canvas>
-    <script>
-        window.onload = function () {
-            const canvas = document.getElementById("renderCanvas");
-            const engine = new BABYLON.Engine(canvas, true);
-            const scene = new BABYLON.Scene(engine);
+<body style="margin: 0; overflow: hidden;">
 
-            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
-            camera.attachControl(canvas, true);
+  <canvas id="renderCanvas" style="width: 100%; height: 100%;"></canvas>
 
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+  <script>
+    // Create the Babylon.js engine and scene
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+    const scene = new BABYLON.Scene(engine);
 
-            scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
+    // Create a basic camera and light
+    const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 10, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+    camera.lowerRadiusLimit = 5;
+    camera.upperRadiusLimit = 20;
 
-            // Load the 3D model
-            BABYLON.SceneLoader.ImportMesh("", "/static/models/", "SATELLITE.stl", scene, function (meshes) {
-                const satellite = meshes[0];
-                satellite.position = BABYLON.Vector3.Zero();
-                satellite.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+    const light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
+    light.intensity = 0.7;
 
-                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(
-                    satellite,
-                    BABYLON.PhysicsImpostor.ConvexHullImpostor,
-                    { mass: 1 },
-                    scene
-                );
+    // Load the 3D model (adjust the scaling)
+    BABYLON.SceneLoader.Append("https://your-model-url/", "SATELLITE.gltf", scene, function (scene) {
+      const model = scene.getMeshByName("SATELLITE");
 
-                // Socket.IO connection
-                const socket = io.connect("https://threed-model-simulation.onrender.com");  // Update with your deployed URL
+      // Scale the model to fit within a smaller area
+      model.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5); // Adjust this scaling factor
 
-                // Listen for force data from the server
-                socket.on("force_data", (data) => {
-                    console.log("Force data received:", data);
+      // Set up animations if any
+      const animationGroup = scene.animationGroups[0]; // Assuming the model has animations
+      animationGroup.start(true, 1.0, animationGroup.from, animationGroup.to);
 
-                    if (data.forceX === undefined || data.forceY === undefined || data.forceZ === undefined) {
-                        console.log("Invalid force data received. Skipping force application.");
-                        return;
-                    }
+      // Render the scene
+      engine.runRenderLoop(function () {
+        scene.render();
+      });
+    });
 
-                    const forceVector = new BABYLON.Vector3(data.forceX, data.forceY, data.forceZ);
-                    console.log("Applying force:", forceVector);
-                    satellite.physicsImpostor.applyForce(forceVector, satellite.getAbsolutePosition());
+    // Resize the engine if the window size changes
+    window.addEventListener("resize", function () {
+      engine.resize();
+    });
+  </script>
 
-                    // Apply rotation for animation
-                    satellite.rotation.x += data.forceX * 0.01;
-                    satellite.rotation.y += data.forceY * 0.01;
-                    satellite.rotation.z += data.forceZ * 0.01;
-                    console.log(`Rotation - X: ${satellite.rotation.x}, Y: ${satellite.rotation.y}, Z: ${satellite.rotation.z}`);
-
-                    // Create force arrow to visualize force direction
-                    const forceArrow = BABYLON.MeshBuilder.CreateLines("forceArrow", {
-                        points: [BABYLON.Vector3.Zero(), forceVector],
-                        color: new BABYLON.Color3(1, 0, 0)
-                    }, scene);
-
-                    forceArrow.position = satellite.position;
-                    console.log("Force arrow created:", forceArrow);
-                });
-            });
-
-            engine.runRenderLoop(function () {
-                scene.render();
-            });
-
-            window.addEventListener("resize", function () {
-                engine.resize();
-            });
-        };
-    </script>
 </body>
 </html>
-
 
 
 
