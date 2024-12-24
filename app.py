@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index4.html')  # Serve the frontend HTML
+    return render_template('index.html')  # Serve the frontend HTML
 
 @app.route('/live-data', methods=['GET'])
 def live_data():
