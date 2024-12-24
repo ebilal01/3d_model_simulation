@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer and Simulation</title>
+    <title>Satellite Simulation with Babylon.js</title>
     <!-- Load Babylon.js from CDN -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script> <!-- Optional if you load complex models -->
@@ -15,7 +15,7 @@
 </head>
 <body>
     <div id="3d-container" style="width: 100%; height: 100vh;"></div> <!-- Container for Babylon.js canvas -->
-    
+
     <script>
         window.onload = function() {
             // Create the Babylon.js engine and scene
@@ -34,8 +34,30 @@
             var light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
             light.intensity = 0.7;
 
-            // Create a simple box
-            var box = BABYLON.MeshBuilder.CreateBox("box", { size: 2 }, scene);
+            // Enable physics in the scene (use an impostor for physics simulation)
+            scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
+
+            // Load the satellite STL model
+            BABYLON.SceneLoader.ImportMesh("", "./", "satellite.stl", scene, function (meshes) {
+                // The meshes array contains the loaded STL model
+
+                // Access the satellite mesh (assuming it's the first mesh)
+                var satellite = meshes[0];
+                
+                // Enable physics on the satellite mesh
+                satellite.physicsImpostor = new BABYLON.PhysicsImpostor(satellite, BABYLON.PhysicsImpostor.MeshImpostor, { mass: 1 }, scene);
+
+                // Apply an initial force to simulate movement in space
+                var force = new BABYLON.Vector3(0, 0, 1); // Apply force in the Z-axis (forward motion)
+                satellite.physicsImpostor.applyForce(force, satellite.getAbsolutePosition());
+
+                // Optionally, apply torque to rotate the satellite
+                var torque = new BABYLON.Vector3(0, 1, 0); // Rotate around the Y-axis
+                satellite.physicsImpostor.applyTorque(torque);
+
+                // Log to check if the model loaded correctly
+                console.log('Satellite model loaded successfully');
+            });
 
             // Start rendering the scene
             engine.runRenderLoop(function() {
@@ -50,6 +72,7 @@
     </script>
 </body>
 </html>
+
 
 
 
