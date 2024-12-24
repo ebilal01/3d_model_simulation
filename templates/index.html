@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data 3D Model</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/STLLoader.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // WebSocket connection
+        const socket = io.connect('https://3d-model-simulation.onrender.com');
+
+        // 3D Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Load STL model
+        const loader = new THREE.STLLoader();
+        let model;
+        loader.load('static/models/SATELLITE.stl', function (geometry) {
+            const material = new THREE.MeshNormalMaterial();
+            model = new THREE.Mesh(geometry, material);
+            model.position.set(0, 0, 0); // Initial position
+            scene.add(model);
+        });
+
+        // Force vector representation (ArrowHelper)
+        const arrowHelper = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0), // Default direction
+            new THREE.Vector3(0, 0, 0), // Position
+            1,                          // Length
+            0xff0000                    // Color
+        );
+        scene.add(arrowHelper);
+
+        // Camera position
+        camera.position.z = 50;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle incoming force vector data
+        socket.on("force_data", (data) => {
+            console.log("Force vector:", data);
+            if (model) {
+                const force = new THREE.Vector3(data.fx, data.fy, data.fz);
+                // Apply force: move the model's position
+                model.position.add(force.multiplyScalar(0.01)); // Adjust scale for realism
+                
+                // Update the arrow helper to show force direction and magnitude
+                arrowHelper.position.copy(model.position); // Arrow follows model
+                arrowHelper.setDirection(force.normalize());
+                arrowHelper.setLength(force.length() / 10); // Adjust length for visibility
+            }
+        });
+
+        // Request simulated force data from the server
+        socket.emit("request_force_data");
+    </script>
+</body>
+</html>
