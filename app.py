@@ -1,31 +1,41 @@
-from flask import Flask, render_template, jsonify
-import random
-import time
+from flask import Flask, render_template
+from flask_socketio import SocketIO
 import json
-from flask_socketio import SocketIO, emit
+import eventlet
+import random
 
+# Setup Flask and SocketIO
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-@app.route('/')
+# Serve the main page
+@app.route("/")
 def index():
-    # Render the main HTML file
-    return render_template('index.html')
+    return render_template("index.html")
 
-@socketio.on('connect')
+# Emit live data periodically
+def generate_live_data():
+    while True:
+        # Example live telemetry data
+        telemetry_data = {
+            "rotation": random.uniform(0, 360),  # Random rotation for example
+            "position": {
+                "x": random.uniform(-5, 5),
+                "y": random.uniform(-5, 5),
+                "z": random.uniform(-5, 5)
+            }
+        }
+        socketio.emit("update_telemetry", json.dumps(telemetry_data))
+        eventlet.sleep(1)  # Update every second
+
+@socketio.on("connect")
 def handle_connect():
-    print("Client connected")
-    emit('force_data', {'message': 'Hello from the server!'})
+    print("Client connected!")
 
-@socketio.on('force_data')
-def handle_force_data(data):
-    print(f"Received data: {data}")
-    # Example: Broadcast the force data back to all clients
-    socketio.emit('force_data', data)
+if __name__ == "__main__":
+    socketio.start_background_task(generate_live_data)
+    socketio.run(app, host="0.0.0.0", port=5000)
 
-if __name__ == '__main__':
-    # Run the Flask server
-    socketio.run(app, host='0.0.0.0', port=5000)
 
 
 
